@@ -2,15 +2,20 @@ import Message from './Message';
 import Modal from './Modal';
 
 export default class Chat {
-  constructor() {
+  constructor(url) {
     this.elem = document.querySelector('.chat');
     this.modal = new Modal();
-    this.usersOnline = [];
+    this.url = url;
+    this.usersOnline = ['olga'];
     this.youUser = null;
     this.input = null;
 
     this.addUser = this.addUser.bind(this);
     this.sendMessage = this.sendMessage.bind(this);
+    this.onWsOpen = this.onWsOpen.bind(this);
+    this.onWsMessage = this.onWsMessage.bind(this);
+    this.onWsError = this.onWsError.bind(this);
+    this.onWsClose = this.onWsClose.bind(this);
   }
 
   static get chatBody() {
@@ -35,16 +40,47 @@ export default class Chat {
     this.elem.addEventListener('submit', this.sendMessage);
   }
 
+  wsConnect() {
+    this.ws = new WebSocket(`wss://${this.url}/ws`);
+    this.ws.addEventListener('open', this.onWsOpen);
+    this.ws.addEventListener('message', this.onWsMessage);
+    this.ws.addEventListener('error', this.onWsError);
+    this.ws.addEventListener('close', this.onWsClose);
+  }
+
+  onWsOpen(e) {
+    console.log('ws open', e);
+    this.ws.send(JSON.stringify({ type: 'register', nickname: this.youUser }));
+  }
+
+  onWsMessage(e) {
+    console.log('ws message', e);
+  }
+
+  onWsError(e) {
+    console.log('ws error', e);
+  }
+
+  onWsClose(e) {
+    console.log('ws close', e);
+  }
+
   addUser(e) {
     if (!e.target.classList.contains('modal__form')) return;
 
     e.preventDefault();
-
     const user = this.modal.input.value;
+
+    if (!user) {
+      alert('Введите никнейм');
+      return;
+    }
+
     const isUserFree = this.checkUser(user);
 
     if (!isUserFree) {
-      this.errorMessage();
+      alert('Такой никнейм занят. Выберите другой');
+      this.modal.input.value = '';
       return;
     }
 
@@ -58,6 +94,7 @@ export default class Chat {
     this.showUsers();
 
     this.input = this.elem.querySelector('.chat__footer-input');
+    this.wsConnect();
   }
 
   checkUser(user) {
