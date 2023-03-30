@@ -6,9 +6,7 @@ export default class Chat {
     this.elem = document.querySelector('.chat');
     this.modal = new Modal();
     this.url = url;
-    this.usersOnline = ['olga'];
-    this.youUser = null;
-    this.input = null;
+    this.usersOnline = [];
 
     this.addUser = this.addUser.bind(this);
     this.sendMessage = this.sendMessage.bind(this);
@@ -40,21 +38,26 @@ export default class Chat {
     this.elem.addEventListener('submit', this.sendMessage);
   }
 
-  wsConnect() {
-    this.ws = new WebSocket(`wss://${this.url}/ws`);
-    this.ws.addEventListener('open', this.onWsOpen);
-    this.ws.addEventListener('message', this.onWsMessage);
-    this.ws.addEventListener('error', this.onWsError);
-    this.ws.addEventListener('close', this.onWsClose);
+  wssConnect() {
+    this.wss = new WebSocket(`wss://${this.url}/ws`);
+    this.wss.addEventListener('open', this.onWsOpen);
+    this.wss.addEventListener('message', this.onWsMessage);
+    this.wss.addEventListener('error', this.onWsError);
+    this.wss.addEventListener('close', this.onWsClose);
   }
 
   onWsOpen(e) {
     console.log('ws open', e);
-    this.ws.send(JSON.stringify({ type: 'register', nickname: this.youUser }));
+    this.wss.send(JSON.stringify({ type: 'register', nickname: this.youUser }));
   }
 
   onWsMessage(e) {
-    console.log('ws message', e);
+    const message = JSON.parse(e.data);
+
+    if (message.type === 'users') {
+      this.usersOnline = message.users;
+      this.showUsers();
+    }
   }
 
   onWsError(e) {
@@ -94,7 +97,7 @@ export default class Chat {
     this.showUsers();
 
     this.input = this.elem.querySelector('.chat__footer-input');
-    this.wsConnect();
+    this.wssConnect();
   }
 
   checkUser(user) {

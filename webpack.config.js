@@ -7,7 +7,6 @@ module.exports = {
   target: 'web',
   devServer: {
     port: 8000,
-    allowedHosts: "all"
   },
   devtool: 'source-map',
   output: {
