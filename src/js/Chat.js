@@ -94,9 +94,7 @@ export default class Chat {
     const { chatBody } = Chat;
     this.elem.insertAdjacentHTML('afterbegin', chatBody);
 
-    this.showUsers();
-
-    this.input = this.elem.querySelector('.chat__footer-input');
+    // this.showUsers();
     this.wssConnect();
   }
 
@@ -122,6 +120,7 @@ export default class Chat {
     if (!e.target.classList.contains('chat__footer')) return;
 
     e.preventDefault();
+    this.input = this.elem.querySelector('.chat__footer-input');
     const message = new Message('You', this.input.value);
     message.elem.classList.add('your-message');
     this.elem.querySelector('.chat__messages').append(message.elem);
