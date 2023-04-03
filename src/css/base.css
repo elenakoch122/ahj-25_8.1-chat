@@ -5,3 +5,18 @@
   padding: 0;
   margin: 0;
 }
+
+.btn {
+  padding: 8px;
+  border: 1px solid green;
+  line-height: 1;
+  color: white;
+  background-color: green;
+  transition: .3s;
+  cursor: pointer;
+}
+
+.btn:hover {
+  color: green;
+  background-color: white;
+}

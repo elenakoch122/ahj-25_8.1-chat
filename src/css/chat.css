@@ -1,6 +1,13 @@
 .chat {
   display: flex;
-  padding: 32px;
+  padding: 48px 32px 16px;
+}
+
+.chat__exit {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  border-radius: 16px;
 }
 
 .chat__users-list {
@@ -35,7 +42,7 @@
   width: 50vw;
   max-width: 500px;
   min-width: 350px;
-  height: calc(100vh - 50px);
+  height: calc(100vh - 64px);
   padding: 8px;
   border: 1px solid black;
   border-radius: 16px;
@@ -89,18 +96,5 @@
 }
 
 .chat__footer-send-button {
-  padding: 8px;
-  border: 1px solid green;
   border-radius: 50%;
-  line-height: 1;
-  color: white;
-  background-color: green;
-  transition: .3s;
-  cursor: pointer;
 }
-
-.chat__footer-send-button:hover {
-  color: green;
-  background-color: white;
-}
-

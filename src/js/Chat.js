@@ -6,10 +6,11 @@ export default class Chat {
     this.elem = document.querySelector('.chat');
     this.modal = new Modal();
     this.url = url;
-    this.usersOnline = [];
+    this.users = [];
 
     this.addUser = this.addUser.bind(this);
     this.sendMessage = this.sendMessage.bind(this);
+    this.exit = this.exit.bind(this);
     this.onWsOpen = this.onWsOpen.bind(this);
     this.onWsMessage = this.onWsMessage.bind(this);
     this.onWsError = this.onWsError.bind(this);
@@ -18,6 +19,7 @@ export default class Chat {
 
   static get chatBody() {
     return `
+      <button class="chat__exit btn">Выйти</button>
       <ul class="chat__users-list"></ul>
 
       <section class="chat__space">
@@ -25,7 +27,7 @@ export default class Chat {
 
         <form class="chat__footer">
           <input class="chat__footer-input" type="text">
-          <button class="chat__footer-send-button">&#10149;</button>
+          <button class="chat__footer-send-button btn">&#10149;</button>
         </form>
       </section>
     `;
@@ -36,6 +38,7 @@ export default class Chat {
 
     this.elem.addEventListener('submit', this.addUser);
     this.elem.addEventListener('submit', this.sendMessage);
+    this.elem.addEventListener('click', this.exit);
   }
 
   wssConnect() {
@@ -52,10 +55,11 @@ export default class Chat {
   }
 
   onWsMessage(e) {
+    console.log('ws message', e);
     const message = JSON.parse(e.data);
 
     if (message.type === 'users') {
-      this.usersOnline = message.users;
+      this.users = message.users;
       this.showUsers();
     }
   }
@@ -66,9 +70,11 @@ export default class Chat {
 
   onWsClose(e) {
     console.log('ws close', e);
+    // this.wss.send(JSON.stringify({ type: 'exit', nickname: this.youUser }));
+    // window.location.reload();
   }
 
-  addUser(e) {
+  async addUser(e) {
     if (!e.target.classList.contains('modal__form')) return;
 
     e.preventDefault();
@@ -79,6 +85,14 @@ export default class Chat {
       return;
     }
 
+    // Запрашиваем массив users с сервера
+    await fetch(`http://${this.url}`)
+      .then((result) => result.json())
+      .then((data) => {
+        this.users = data;
+        console.log(data);
+      });
+
     const isUserFree = this.checkUser(user);
 
     if (!isUserFree) {
@@ -88,22 +102,24 @@ export default class Chat {
     }
 
     this.youUser = user;
-    this.usersOnline.push(this.youUser);
+    this.users.push(this.youUser);
     this.modal.hide();
 
     const { chatBody } = Chat;
     this.elem.insertAdjacentHTML('afterbegin', chatBody);
 
-    // this.showUsers();
     this.wssConnect();
   }
 
   checkUser(user) {
-    return this.usersOnline.every((u) => u !== user);
+    return this.users.every((u) => u !== user);
   }
 
   showUsers() {
-    this.usersOnline.forEach((u) => {
+    // очистить список, затем создать снова со всеми юзерами
+    this.elem.querySelector('.chat__users-list').textContent = '';
+
+    this.users.forEach((u) => {
       const user = document.createElement('li');
       user.className = 'chat__users-item user';
       user.textContent = u;
@@ -125,5 +141,11 @@ export default class Chat {
     message.elem.classList.add('your-message');
     this.elem.querySelector('.chat__messages').append(message.elem);
     this.input.value = '';
+  }
+
+  exit(e) {
+    if (!e.target.classList.contains('chat__exit')) return;
+    this.wss.send(JSON.stringify({ type: 'exit', nickname: this.youUser }));
+    this.wss.close();
   }
 }
