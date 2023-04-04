@@ -1,5 +1,9 @@
+/* eslint-disable no-param-reassign */
+import moment from 'moment';
 import Message from './Message';
 import Modal from './Modal';
+
+moment.locale('ru');
 
 export default class Chat {
   constructor(url) {
@@ -11,9 +15,9 @@ export default class Chat {
     this.addUser = this.addUser.bind(this);
     this.sendMessage = this.sendMessage.bind(this);
     this.exit = this.exit.bind(this);
+    this.addMessagetoDOM = this.addMessagetoDOM.bind(this);
     this.onWsOpen = this.onWsOpen.bind(this);
     this.onWsMessage = this.onWsMessage.bind(this);
-    this.onWsError = this.onWsError.bind(this);
     this.onWsClose = this.onWsClose.bind(this);
   }
 
@@ -45,32 +49,49 @@ export default class Chat {
     this.wss = new WebSocket(`wss://${this.url}/ws`);
     this.wss.addEventListener('open', this.onWsOpen);
     this.wss.addEventListener('message', this.onWsMessage);
-    this.wss.addEventListener('error', this.onWsError);
     this.wss.addEventListener('close', this.onWsClose);
+    this.intervalId = setInterval(this.reconnect.bind(this), 1000);
   }
 
-  onWsOpen(e) {
-    console.log('ws open', e);
+  reconnect() {
+    if (this.wss.readyState === WebSocket.CLOSING || this.wss.readyState === WebSocket.CLOSED) {
+      this.wssConnect();
+    }
+  }
+
+  onWsOpen() {
     this.wss.send(JSON.stringify({ type: 'register', nickname: this.youUser }));
   }
 
   onWsMessage(e) {
-    console.log('ws message', e);
     const message = JSON.parse(e.data);
 
-    if (message.type === 'users') {
-      this.users = message.users;
-      this.showUsers();
+    switch (message.type) {
+      case 'users':
+        this.users = message.users;
+        this.showUsers();
+        break;
+
+      case 'allMessages':
+        message.chat.forEach((m) => this.addMessagetoDOM(m));
+        break;
+
+      // message.type === 'message'
+      default:
+        this.addMessagetoDOM(message.message);
     }
   }
 
-  onWsError(e) {
-    console.log('ws error', e);
+  addMessagetoDOM(obj) {
+    if (obj.user === this.youUser) {
+      obj.user = 'You';
+    }
+    const message = new Message(obj);
+    this.elem.querySelector('.chat__messages').append(message.elem);
   }
 
   onWsClose(e) {
     console.log('ws close', e);
-    // this.wss.send(JSON.stringify({ type: 'exit', nickname: this.youUser }));
     // window.location.reload();
   }
 
@@ -86,7 +107,7 @@ export default class Chat {
     }
 
     // Запрашиваем массив users с сервера
-    await fetch(`http://${this.url}`)
+    await fetch(`https://${this.url}/`)
       .then((result) => result.json())
       .then((data) => {
         this.users = data;
@@ -137,15 +158,23 @@ export default class Chat {
 
     e.preventDefault();
     this.input = this.elem.querySelector('.chat__footer-input');
-    const message = new Message('You', this.input.value);
-    message.elem.classList.add('your-message');
-    this.elem.querySelector('.chat__messages').append(message.elem);
+
+    if (this.input.value === '') return;
+
+    const message = {
+      user: this.youUser,
+      message: this.input.value,
+      day: moment().format('L'),
+      time: moment().format('LT'),
+    };
+    this.wss.send(JSON.stringify({ type: 'message', post: message }));
+
     this.input.value = '';
   }
 
   exit(e) {
     if (!e.target.classList.contains('chat__exit')) return;
-    this.wss.send(JSON.stringify({ type: 'exit', nickname: this.youUser }));
+    clearInterval(this.intervalId);
     this.wss.close();
   }
 }
