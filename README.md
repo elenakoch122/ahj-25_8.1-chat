@@ -2,7 +2,7 @@
 
 [![Build status](https://ci.appveyor.com/api/projects/status/2dfohotdp0o0dk5f?svg=true)](https://ci.appveyor.com/project/elenakoch122/ahj-25-8-1-chat)
 
-Страница проекта:  https://eight-1-chat.onrender.com/
+GitHub Pages:  https://elenakoch122.github.io/ahj-25_8.1-chat/
 
 Правила сдачи задания:
 
