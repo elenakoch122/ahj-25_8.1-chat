@@ -50,13 +50,6 @@ export default class Chat {
     this.wss.addEventListener('open', this.onWsOpen);
     this.wss.addEventListener('message', this.onWsMessage);
     this.wss.addEventListener('close', this.onWsClose);
-    this.intervalId = setInterval(this.reconnect.bind(this), 1000);
-  }
-
-  reconnect() {
-    if (this.wss.readyState === WebSocket.CLOSING || this.wss.readyState === WebSocket.CLOSED) {
-      this.wssConnect();
-    }
   }
 
   onWsOpen() {
@@ -92,7 +85,7 @@ export default class Chat {
 
   onWsClose(e) {
     console.log('ws close', e);
-    // window.location.reload();
+    window.location.reload();
   }
 
   async addUser(e) {
@@ -174,7 +167,6 @@ export default class Chat {
 
   exit(e) {
     if (!e.target.classList.contains('chat__exit')) return;
-    clearInterval(this.intervalId);
     this.wss.close();
   }
 }
